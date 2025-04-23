@@ -16,6 +16,9 @@ if [ ! -d "$IDF_PATH" ]; then
 	echo "ESP-IDF is not installed! Installing local copy"
 	git clone $IDF_REPO_URL -b $IDF_BRANCH
 	idf_was_installed="1"
+else
+    git -C "$IDF_PATH" fetch
+    git -C "$IDF_PATH" reset --hard
 fi
 
 if [ "$IDF_COMMIT" ]; then

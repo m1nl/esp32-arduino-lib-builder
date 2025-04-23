@@ -1,5 +1,6 @@
 #/bin/bash
 
+set -e
 source ./tools/config.sh
 
 CAMERA_REPO_URL="https://github.com/espressif/esp32-camera.git"
@@ -13,11 +14,6 @@ TINYUSB_REPO_URL="https://github.com/hathach/tinyusb.git"
 #
 # CLONE/UPDATE ARDUINO
 #
-echo "Updating ESP32 Arduino..."
-if [ ! -d "$AR_COMPS/arduino" ]; then
-	git clone $AR_REPO_URL "$AR_COMPS/arduino"
-fi
-
 if [ -z $AR_BRANCH ]; then
 	if [ -z $GITHUB_HEAD_REF ]; then
 		current_branch=`git branch --show-current`
@@ -45,12 +41,18 @@ if [ -z $AR_BRANCH ]; then
 	fi
 fi
 
-if [ "$AR_BRANCH" ]; then
-	git -C "$AR_COMPS/arduino" checkout "$AR_BRANCH" && \
-	git -C "$AR_COMPS/arduino" fetch && \
-	git -C "$AR_COMPS/arduino" pull --ff-only
+echo "Updating ESP32 Arduino..."
+if [ ! -d "$AR_COMPS/arduino" ]; then
+	git clone -b $AR_BRANCH $AR_REPO_URL "$AR_COMPS/arduino"
+else
+    git -C "$AR_COMPS/arduino" fetch
+	git -C "$AR_COMPS/arduino" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
+
+if [ "$AR_COMMIT" ]; then
+    git -C "$AR_COMPS/arduino" checkout "$AR_COMMIT"
+fi
+patch --directory="$AR_COMPS/arduino" -p1 < patches/arduino_typo.diff
 
 #
 # CLONE/UPDATE ESP32-CAMERA
@@ -59,45 +61,48 @@ echo "Updating ESP32 Camera..."
 if [ ! -d "$AR_COMPS/esp32-camera" ]; then
 	git clone $CAMERA_REPO_URL "$AR_COMPS/esp32-camera"
 else
-	git -C "$AR_COMPS/esp32-camera" fetch && \
-	git -C "$AR_COMPS/esp32-camera" pull --ff-only
+	git -C "$AR_COMPS/esp32-camera" fetch
+	git -C "$AR_COMPS/esp32-camera" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
+git -C "$AR_COMPS/esp32-camera" checkout tags/v2.0.15
 
 #
 # CLONE/UPDATE ESP-DL
 #
 echo "Updating ESP-DL..."
 if [ ! -d "$AR_COMPS/esp-dl" ]; then
-	git clone $DL_REPO_URL "$AR_COMPS/esp-dl" && \
-	git -C "$AR_COMPS/esp-dl" reset --hard 0632d2447dd49067faabe9761d88fa292589d5d9
-	if [ $? -ne 0 ]; then exit 1; fi
+	git clone $DL_REPO_URL "$AR_COMPS/esp-dl"
+else
+    git -C "$AR_COMPS/esp-dl" fetch
+    git -C "$AR_COMPS/esp-dl" reset --hard
 fi
+git -C "$AR_COMPS/esp-dl" checkout 0632d2447dd49067faabe9761d88fa292589d5d9
 
 #
 # CLONE/UPDATE ESP-LITTLEFS
 #
 echo "Updating ESP-LITTLEFS..."
 if [ ! -d "$AR_COMPS/esp_littlefs" ]; then
-	git clone $LITTLEFS_REPO_URL "$AR_COMPS/esp_littlefs" && \
-    git -C "$AR_COMPS/esp_littlefs" submodule update --init --recursive
+	git clone $LITTLEFS_REPO_URL "$AR_COMPS/esp_littlefs"
 else
-	git -C "$AR_COMPS/esp_littlefs" fetch && \
-	git -C "$AR_COMPS/esp_littlefs" pull --ff-only && \
-    git -C "$AR_COMPS/esp_littlefs" submodule update --init --recursive
+	git -C "$AR_COMPS/esp_littlefs" fetch
+	git -C "$AR_COMPS/esp_littlefs" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
+git -C "$AR_COMPS/esp_littlefs" checkout tags/v1.16.4
+git -C "$AR_COMPS/esp_littlefs" submodule update --init --recursive
 
 #
 # CLONE/UPDATE ESP-RAINMAKER
 #
 echo "Updating ESP-RainMaker..."
 if [ ! -d "$AR_COMPS/esp-rainmaker" ]; then
-    git clone $RMAKER_REPO_URL "$AR_COMPS/esp-rainmaker" && \
-	git -C "$AR_COMPS/esp-rainmaker" reset --hard d8e93454f495bd8a414829ec5e86842b373ff555 && \
-    git -C "$AR_COMPS/esp-rainmaker" submodule update --init --recursive
+    git clone $RMAKER_REPO_URL "$AR_COMPS/esp-rainmaker"
+else
+    git -C "$AR_COMPS/esp-rainmaker" fetch
+    git -C "$AR_COMPS/esp-rainmaker" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
+git -C "$AR_COMPS/esp-rainmaker" checkout 0414a8530ec1ac8714269302503c71c238b68836
+git -C "$AR_COMPS/esp-rainmaker" submodule update --init --recursive
 
 #
 # CLONE/UPDATE ESP-DSP
@@ -106,10 +111,10 @@ echo "Updating ESP-DSP..."
 if [ ! -d "$AR_COMPS/espressif__esp-dsp" ]; then
 	git clone $DSP_REPO_URL "$AR_COMPS/espressif__esp-dsp"
 else
-	git -C "$AR_COMPS/espressif__esp-dsp" fetch && \
-	git -C "$AR_COMPS/espressif__esp-dsp" pull --ff-only
+    git -C "$AR_COMPS/espressif__esp-dsp" fetch
+	git -C "$AR_COMPS/espressif__esp-dsp" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
+git -C "$AR_COMPS/espressif__esp-dsp" checkout tags/v1.6.1
 
 #
 # CLONE/UPDATE TINYUSB
@@ -118,8 +123,8 @@ echo "Updating TinyUSB..."
 if [ ! -d "$AR_COMPS/arduino_tinyusb/tinyusb" ]; then
 	git clone $TINYUSB_REPO_URL "$AR_COMPS/arduino_tinyusb/tinyusb"
 else
-	git -C "$AR_COMPS/arduino_tinyusb/tinyusb" fetch && \
-	git -C "$AR_COMPS/arduino_tinyusb/tinyusb" pull --ff-only
+	git -C "$AR_COMPS/arduino_tinyusb/tinyusb" fetch
+	git -C "$AR_COMPS/arduino_tinyusb/tinyusb" reset --hard
 fi
-if [ $? -ne 0 ]; then exit 1; fi
-
+git -C "$AR_COMPS/arduino_tinyusb/tinyusb" checkout 0.15.0
+git -C "$AR_COMPS/arduino_tinyusb/tinyusb" submodule update --init --recursive
