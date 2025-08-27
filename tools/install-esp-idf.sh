@@ -37,6 +37,7 @@ if [ ! -x $idf_was_installed ] || [ ! -x $commit_predefined ]; then
 	# Temporarily patch the ETH driver to support custom SPI
 	cd $IDF_PATH
 	patch -p1 -i ../patches/i2s.diff
+	patch -p1 -i ../patches/ext_crystal_current_method.diff
 	cd -
 fi
 
