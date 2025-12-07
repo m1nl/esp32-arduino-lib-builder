@@ -11,9 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IDF_COMMIT: tags/v4.4.8
   IDF_BRANCH: release/v4.4
-  ARDUINO_REF: 1f038677eb2eaf5e9ca6b6074486803c15468bed
+  IDF_COMMIT: tags/v4.4.8
+  ARDUINO_BRANCH: release/v2.x
+  ARDUINO_COMMIT: 1f038677eb2eaf5e9ca6b6074486803c15468bed
 
 jobs:
   build-libs:
@@ -28,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: bash ./tools/prepare-ci.sh
     - name: Build Libs for ${{ matrix.target }}
-      run: bash ./build.sh -I $IDF_BRANCH -i $IDF_COMMIT -A $ARDUINO_REF -t${{ matrix.target }}
+      run: bash ./build.sh -I $IDF_BRANCH -i $IDF_COMMIT -A $ARDUINO_BRANCH -a $ARDUINO_COMMIT -t ${{ matrix.target }}
     - name: Upload archive
       uses: actions/upload-artifact@v4
       with:
