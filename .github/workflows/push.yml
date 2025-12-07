@@ -2,13 +2,18 @@ name: ESP32 Arduino Libs CI
 
 on:
   push:
-    branches:
-    - master
   pull_request:
+    branches:
+    - release/v4.4
 
 concurrency:
   group: esp-idf-libs-${{github.event.pull_request.number || github.ref}}
   cancel-in-progress: true
+
+env:
+  IDF_COMMIT: tags/v4.4.8
+  IDF_BRANCH: release/v4.4
+  ARDUINO_REF: 1f038677eb2eaf5e9ca6b6074486803c15468bed
 
 jobs:
   build-libs:
@@ -19,13 +24,13 @@ jobs:
         target: [esp32, esp32s2, esp32s3, esp32c3]
       fail-fast: false
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Install dependencies
       run: bash ./tools/prepare-ci.sh
     - name: Build Libs for ${{ matrix.target }}
-      run: bash ./build.sh -t ${{ matrix.target }}
+      run: bash ./build.sh -I $IDF_BRANCH -i $IDF_COMMIT -A $ARDUINO_REF -t${{ matrix.target }}
     - name: Upload archive
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: artifacts-${{ matrix.target }}
         path: dist
